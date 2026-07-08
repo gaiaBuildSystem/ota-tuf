@@ -1,6 +1,7 @@
 package com.advancedtelematic.tuf.cli
 
 import java.net.URI
+import java.nio.charset.StandardCharsets
 import java.time.{Instant, Period, ZoneOffset}
 import java.util.concurrent.TimeUnit
 import com.advancedtelematic.libats.data.DataType.Checksum
@@ -292,8 +293,11 @@ object CommandHandler {
         } yield {
           val signature = TufCrypto.signPayload(privKey, inJson).toClient(pubKey.id)
           val payload = SignedPayload(Seq(signature), inJson, inJson)
+          val ensureAsciiPrinter = io.circe.Printer.spaces2.copy(escapeNonAscii = true)
 
-          config.outputPath.streamOrStdout.write(payload.asJson.spaces2.getBytes)
+          config.outputPath.streamOrStdout.write(
+            ensureAsciiPrinter.print(payload.asJson).getBytes(StandardCharsets.UTF_8)
+          )
         }
 
       case VerifyUserJson =>
